@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工程管理アプリ</title>
+  <style>
+    :root {
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --line: #d9dee5;
+      --text: #1f2937;
+      --sub: #6b7280;
+      --accent: #2563eb;
+      --accent2: #0f766e;
+      --danger: #dc2626;
+      --warn: #d97706;
+      --ok: #16a34a;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 16px;
+    }
+
+    .header-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .sub {
+      color: var(--sub);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 0 16px 32px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      font: inherit;
+    }
+
+    input, select, textarea {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 11px 12px;
+    }
+
+    textarea { min-height: 90px; resize: vertical; }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-sub { background: #eef2ff; color: var(--accent); }
+    .btn-ok { background: #ecfdf5; color: var(--ok); }
+    .btn-warn { background: #fff7ed; color: var(--warn); }
+    .btn-danger { background: #fef2f2; color: var(--danger); }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .toolbar > * { flex: 1; min-width: 140px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      background: linear-gradient(180deg, #fff, #f8fafc);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .stat .n {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 6px;
+    }
+
+    .project-list {
+      display: grid;
+      gap: 12px;
+      max-height: calc(100vh - 290px);
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .project-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      cursor: pointer;
+      background: #fff;
+      transition: .15s ease;
+    }
+
+    .project-item:hover { transform: translateY(-1px); }
+    .project-item.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .name {
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .planned { background: #eff6ff; color: #1d4ed8; }
+    .doing { background: #fef3c7; color: #92400e; }
+    .done { background: #dcfce7; color: #166534; }
+    .hold { background: #f3f4f6; color: #374151; }
+
+    .muted { color: var(--sub); font-size: 13px; }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 6px;
+    }
+
+    .bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%;
+    }
+
+    .detail-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .task-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .task-table th, .task-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    .task-table th { color: var(--sub); font-size: 12px; }
+
+    .pill-btn {
+      width: auto;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .empty {
+      padding: 24px;
+      text-align: center;
+      color: var(--sub);
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      background: #fafafa;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mb12 { margin-bottom: 12px; }
+    .mb16 { margin-bottom: 16px; }
+    .mt12 { margin-top: 12px; }
+
+    @media (max-width: 920px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      .stats {
+        grid-template-columns: 1fr 1fr;
+      }
+      .project-list {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .grid2 { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .task-table, .task-table thead, .task-table tbody, .task-table tr, .task-table th, .task-table td {
+        display: block;
+      }
+      .task-table thead { display: none; }
+      .task-table tr {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        margin-bottom: 10px;
+        padding: 6px;
+      }
+      .task-table td {
+        border: none;
+        padding: 6px;
+      }
+      .task-table td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 12px;
+        color: var(--sub);
+        margin-bottom: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-wrap">
+      <div>
+        <h1>工程管理アプリ</h1>
+        <div class="sub">スマホ対応・案件別工程管理 / 今後は見積・写真・日報へ拡張可能</div>
+      </div>
+      <div class="actions" style="min-width:260px;">
+        <button class="btn-sub" onclick="exportData()">データ出力</button>
+        <button class="btn-ok" onclick="document.getElementById('importFile').click()">データ読込</button>
+        <input id="importFile" type="file" accept="application/json" hidden />
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <div class="card mb16">
+        <h2 class="section-title">案件登録</h2>
+        <div class="grid2">
+          <div>
+            <label>案件名</label>
+            <input id="projectName" placeholder="例：〇〇マンション大規模修繕工事" />
+          </div>
+          <div>
+            <label>担当者</label>
+            <input id="projectOwner" placeholder="例：相川" />
+          </div>
+          <div>
+            <label>開始日</label>
+            <input id="projectStart" type="date" />
+          </div>
+          <div>
+            <label>完了予定日</label>
+            <input id="projectEnd" type="date" />
+          </div>
+          <div>
+            <label>状態</label>
+            <select id="projectStatus">
+              <option value="planned">予定</option>
+              <option value="doing">進行中</option>
+              <option value="done">完了</option>
+              <option value="hold">保留</option>
+            </select>
+          </div>
+          <div>
+            <label>現場住所</label>
+            <input id="projectSite" placeholder="例：大阪府八尾市..." />
+          </div>
+        </div>
+        <div class="mt12">
+          <label>メモ</label>
+          <textarea id="projectMemo" placeholder="注意事項、段取り、共有事項など"></textarea>
+        </div>
+        <div class="mt12">
+          <button class="btn-primary" onclick="addProject()">案件を追加</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">案件一覧</h2>
+        <div class="toolbar">
+          <input id="searchBox" placeholder="案件名・担当者で検索" oninput="render()" />
+          <select id="filterStatus" onchange="render()">
+            <option value="all">すべての状態</option>
+            <option value="planned">予定</option>
+            <option value="doing">進行中</option>
+            <option value="done">完了</option>
+            <option value="hold">保留</option>
+          </select>
+        </div>
+        <div id="projectList" class="project-list"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="stats">
+        <div class="stat"><div class="muted">案件数</div><div class="n" id="statProjects">0</div></div>
+        <div class="stat"><div class="muted">進行中</div><div class="n" id="statDoing">0</div></div>
+        <div class="stat"><div class="muted">完了工程</div><div class="n" id="statDoneTasks">0</div></div>
+        <div class="stat"><div class="muted">遅延懸念</div><div class="n" id="statDelay">0</div></div>
+      </div>
+
+      <div class="card">
+        <div id="detailArea"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'koutei_app_v1';
+
+    let state = loadState();
+    let selectedProjectId = state.projects[0]?.id || null;
+
+    document.getElementById('importFile').addEventListener('change', importData);
+
+    function uid() {
+      return Math.random().toString(36).slice(2, 10);
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+
+      const demo = {
+        projects: [
+          {
+            id: uid(),
+            name: 'サンプル：〇〇マンション大規模修繕工事',
+            owner: '相川',
+            start: '2026-04-01',
+            end: '2026-08-31',
+            status: 'doing',
+            site: '大阪府八尾市',
+            memo: '足場 → 下地補修 → シーリング → 塗装 → 防水 → 検査 の流れ',
+            tasks: [
+              { id: uid(), name: '足場仮設', assignee: '現場A', start: '2026-04-01', end: '2026-04-15', status: 'done', memo: '' },
+              { id: uid(), name: '下地補修', assignee: '現場B', start: '2026-04-16', end: '2026-05-20', status: 'doing', memo: '浮き補修優先' },
+              { id: uid(), name: 'シーリング', assignee: '防水班', start: '2026-05-21', end: '2026-06-10', status: 'planned', memo: '' }
+            ]
+          }
+        ]
+      };
+      return demo;
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function statusLabel(status) {
+      return {
+        planned: '予定',
+        doing: '進行中',
+        done: '完了',
+        hold: '保留'
+      }[status] || status;
+    }
+
+    function statusClass(status) {
+      return status || 'planned';
+    }
+
+    function addProject() {
+      const name = val('projectName');
+      if (!name) {
+        alert('案件名を入力してください。');
+        return;
+      }
+      const project = {
+        id: uid(),
+        name,
+        owner: val('projectOwner'),
+        start: val('projectStart'),
+        end: val('projectEnd'),
+        status: val('projectStatus') || 'planned',
+        site: val('projectSite'),
+        memo: val('projectMemo'),
+        tasks: []
+      };
+      state.projects.unshift(project);
+      selectedProjectId = project.id;
+      saveState();
+      clearProjectForm();
+      render();
+    }
+
+    function clearProjectForm() {
+      ['projectName','projectOwner','projectStart','projectEnd','projectSite','projectMemo'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('projectStatus').value = 'planned';
+    }
+
+    function val(id) {
+      return document.getElementById(id).value.trim();
+    }
+
+    function getSelectedProject() {
+      return state.projects.find(p => p.id === selectedProjectId) || null;
+    }
+
+    function calcProgress(project) {
+      if (!project.tasks.length) return 0;
+      const done = project.tasks.filter(t => t.status === 'done').length;
+      return Math.round((done / project.tasks.length) * 100);
+    }
+
+    function isDelayed(task) {
+      if (!task.end || task.status === 'done') return false;
+      const today = new Date();
+      const end = new Date(task.end + 'T23:59:59');
+      return end < today;
+    }
+
+    function projectDelayCount(project) {
+      return project.tasks.filter(isDelayed).length;
+    }
+
+    function render() {
+      renderStats();
+      renderProjectList();
+      renderDetail();
+    }
+
+    function renderStats() {
+      const projects = state.projects;
+      const doing = projects.filter(p => p.status === 'doing').length;
+      const doneTasks = projects.flatMap(p => p.tasks).filter(t => t.status === 'done').length;
+      const delay = projects.flatMap(p => p.tasks).filter(isDelayed).length;
+      setText('statProjects', projects.length);
+      setText('statDoing', doing);
+      setText('statDoneTasks', doneTasks);
+      setText('statDelay', delay);
+    }
+
+    function renderProjectList() {
+      const list = document.getElementById('projectList');
+      const q = document.getElementById('searchBox').value.trim().toLowerCase();
+      const filter = document.getElementById('filterStatus').value;
+
+      let projects = [...state.projects];
+      if (q) {
+        projects = projects.filter(p =>
+          [p.name, p.owner, p.site, p.memo].join(' ').toLowerCase().includes(q)
+        );
+      }
+      if (filter !== 'all') {
+        projects = projects.filter(p => p.status === filter);
+      }
+
+      if (!projects.length) {
+        list.innerHTML = '<div class="empty">該当する案件がありません。</div>';
+        return;
+      }
+
+      list.innerHTML = projects.map(project => {
+        const progress = calcProgress(project);
+        const delayCount = projectDelayCount(project);
+        return `
+          <div class="project-item ${project.id === selectedProjectId ? 'active' : ''}" onclick="selectProject('${project.id}')">
+            <div class="row">
+              <div class="name">${escapeHtml(project.name)}</div>
+              <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
+            </div>
+            <div class="muted">担当：${escapeHtml(project.owner || '-')}</div>
+            <div class="muted">期間：${escapeHtml(project.start || '-')} ～ ${escapeHtml(project.end || '-')}</div>
+            <div class="progress"><div class="bar" style="width:${progress}%"></div></div>
+            <div class="row">
+              <div class="muted">進捗 ${progress}%</div>
+              <div class="muted">遅延懸念 ${delayCount}件</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderDetail() {
+      const area = document.getElementById('detailArea');
+      const project = getSelectedProject();
+      if (!project) {
+        area.innerHTML = '<div class="empty">左側から案件を選択してください。</div>';
+        return;
+      }
+
+      const progress = calcProgress(project);
+      area.innerHTML = `
+        <div class="detail-head mb16">
+          <div>
+            <h2 class="section-title" style="margin-bottom:6px;">${escapeHtml(project.name)}</h2>
+            <div class="muted">担当：${escapeHtml(project.owner || '-')}</div>
+            <div class="muted">現場：${escapeHtml(project.site || '-')}</div>
+            <div class="muted">期間：${escapeHtml(project.start || '-')} ～ ${escapeHtml(project.end || '-')}</div>
+            <div class="muted">メモ：${escapeHtml(project.memo || '-')}</div>
+          </div>
+          <div class="actions">
+            <span class="badge ${statusClass(project.status)}">${statusLabel(project.status)}</span>
+            <button class="pill-btn btn-warn" onclick="editProject('${project.id}')">案件編集</button>
+            <button class="pill-btn btn-danger" onclick="deleteProject('${project.id}')">案件削除</button>
+          </div>
+        </div>
+
+        <div class="mb16">
+          <div class="row"><strong>案件進捗</strong><strong>${progress}%</strong></div>
+          <div class="progress"><div class="bar" style="width:${progress}%"></div></div>
+        </div>
+
+        <div class="card" style="padding:14px; margin-bottom:16px; box-shadow:none;">
+          <h3 class="section-title" style="font-size:16px;">工程追加</h3>
+          <div class="grid2">
+            <div>
+              <label>工程名</label>
+              <input id="taskName" placeholder="例：シーリング打替" />
+            </div>
+            <div>
+              <label>担当</label>
+              <input id="taskAssignee" placeholder="例：防水班" />
+            </div>
+            <div>
+              <label>開始日</label>
+              <input id="taskStart" type="date" />
+            </div>
+            <div>
+              <label>完了予定日</label>
+              <input id="taskEnd" type="date" />
+            </div>
+            <div>
+              <label>状態</label>
+              <select id="taskStatus">
+                <option value="planned">予定</option>
+                <option value="doing">進行中</option>
+                <option value="done">完了</option>
+                <option value="hold">保留</option>
+              </select>
+            </div>
+            <div>
+              <label>メモ</label>
+              <input id="taskMemo" placeholder="注意事項など" />
+            </div>
+          </div>
+          <div class="mt12"><button class="btn-primary" onclick="addTask('${project.id}')">工程を追加</button></div>
+        </div>
+
+        <h3 class="section-title">工程一覧</h3>
+        ${project.tasks.length ? `
+          <table class="task-table">
+            <thead>
+              <tr>
+                <th>工程名</th>
+                <th>担当</th>
+                <th>期間</th>
+                <th>状態</th>
+                <th>メモ</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${project.tasks.map(task => `
+                <tr>
+                  <td data-label="工程名"><strong>${escapeHtml(task.name)}</strong>${isDelayed(task) ? '<div class="muted" style="color:#dc2626;">期限超過</div>' : ''}</td>
+                  <td data-label="担当">${escapeHtml(task.assignee || '-')}</td>
+                  <td data-label="期間">${escapeHtml(task.start || '-')}<br>～ ${escapeHtml(task.end || '-')}</td>
+                  <td data-label="状態"><span class="badge ${statusClass(task.status)}">${statusLabel(task.status)}</span></td>
+                  <td data-label="メモ">${escapeHtml(task.memo || '-')}</td>
+                  <td data-label="操作">
+                    <div class="actions">
+                      <button class="pill-btn btn-ok" onclick="toggleTaskDone('${project.id}','${task.id}')">完了切替</button>
+                      <button class="pill-btn btn-warn" onclick="editTask('${project.id}','${task.id}')">編集</button>
+                      <button class="pill-btn btn-danger" onclick="deleteTask('${project.id}','${task.id}')">削除</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        ` : '<div class="empty">まだ工程が登録されていません。</div>'}
+      `;
+    }
+
+    function selectProject(id) {
+      selectedProjectId = id;
+      render();
+    }
+
+    function addTask(projectId) {
+      const project = state.projects.find(p => p.id === projectId);
+      if (!project) return;
+      const name = val('taskName');
+      if (!name) {
+        alert('工程名を入力してください。');
+        return;
+      }
+      project.tasks.push({
+        id: uid(),
+        name,
+        assignee: val('taskAssignee'),
+        start: val('taskStart'),
+        end: val('taskEnd'),
+        status: val('taskStatus') || 'planned',
+        memo: val('taskMemo')
+      });
+      saveState();
+      render();
+      ['taskName','taskAssignee','taskStart','taskEnd','taskMemo'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      document.getElementById('taskStatus').value = 'planned';
+    }
+
+    function toggleTaskDone(projectId, taskId) {
+      const task = findTask(projectId, taskId);
+      if (!task) return;
+      task.status = task.status === 'done' ? 'doing' : 'done';
+      saveState();
+      render();
+    }
+
+    function editTask(projectId, taskId) {
+      const task = findTask(projectId, taskId);
+      if (!task) return;
+      const name = prompt('工程名', task.name);
+      if (name === null) return;
+      const assignee = prompt('担当', task.assignee || '');
+      if (assignee === null) return;
+      const start = prompt('開始日（YYYY-MM-DD）', task.start || '');
+      if (start === null) return;
+      const end = prompt('完了予定日（YYYY-MM-DD）', task.end || '');
+      if (end === null) return;
+      const status = prompt('状態 planned / doing / done / hold', task.status || 'planned');
+      if (status === null) return;
+      const memo = prompt('メモ', task.memo || '');
+      if (memo === null) return;
+      task.name = name.trim();
+      task.assignee = assignee.trim();
+      task.start = start.trim();
+      task.end = end.trim();
+      task.status = ['planned','doing','done','hold'].includes(status.trim()) ? status.trim() : task.status;
+      task.memo = memo.trim();
+      saveState();
+      render();
+    }
+
+    function deleteTask(projectId, taskId) {
+      if (!confirm('この工程を削除しますか？')) return;
+      const project = state.projects.find(p => p.id === projectId);
+      if (!project) return;
+      project.tasks = project.tasks.filter(t => t.id !== taskId);
+      saveState();
+      render();
+    }
+
+    function findTask(projectId, taskId) {
+      const project = state.projects.find(p => p.id === projectId);
+      if (!project) return null;
+      return project.tasks.find(t => t.id === taskId) || null;
+    }
+
+    function editProject(projectId) {
+      const project = state.projects.find(p => p.id === projectId);
+      if (!project) return;
+      const name = prompt('案件名', project.name);
+      if (name === null) return;
+      const owner = prompt('担当者', project.owner || '');
+      if (owner === null) return;
+      const start = prompt('開始日（YYYY-MM-DD）', project.start || '');
+      if (start === null) return;
+      const end = prompt('完了予定日（YYYY-MM-DD）', project.end || '');
+      if (end === null) return;
+      const status = prompt('状態 planned / doing / done / hold', project.status || 'planned');
+      if (status === null) return;
+      const site = prompt('現場住所', project.site || '');
+      if (site === null) return;
+      const memo = prompt('メモ', project.memo || '');
+      if (memo === null) return;
+
+      project.name = name.trim();
+      project.owner = owner.trim();
+      project.start = start.trim();
+      project.end = end.trim();
+      project.status = ['planned','doing','done','hold'].includes(status.trim()) ? status.trim() : project.status;
+      project.site = site.trim();
+      project.memo = memo.trim();
+      saveState();
+      render();
+    }
+
+    function deleteProject(projectId) {
+      if (!confirm('この案件を削除しますか？')) return;
+      state.projects = state.projects.filter(p => p.id !== projectId);
+      if (selectedProjectId === projectId) selectedProjectId = state.projects[0]?.id || null;
+      saveState();
+      render();
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'koutei-data.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (!imported.projects || !Array.isArray(imported.projects)) throw new Error('invalid');
+          state = imported;
+          selectedProjectId = state.projects[0]?.id || null;
+          saveState();
+          render();
+          alert('データを読み込みました。');
+        } catch {
+          alert('JSONデータの形式が正しくありません。');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    render();
+  </script>
+</body>
+</html>
